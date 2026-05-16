@@ -1,20 +1,21 @@
 import pandas as pd
 import os
-
-if os.path.exists("personal_expenses.xlsx"):
-    df = pd.read_excel("personal_expenses.xlsx")
+from datetime import datetime
+if os.path.exists("expenses.xlsx"):
+    df = pd.read_excel("expenses.xlsx")
 else:
-    df = pd.DataFrame(columns=["Category", "Amount"])
+    df = pd.DataFrame(columns=["Category", "Amount", "Date"])
 
 def add_expense():
+    date = datetime.today().strftime("%Y-%m-%d")
     category = input("Category:")
     amount = float(input("Amount: "))
 
     global df
-    new_row = pd.DataFrame([{"Category": category, "Amount": amount}])
+    new_row = pd.DataFrame([{"Category": category, "Amount": amount, "Date":date}])
     df = pd.concat([df, new_row], ignore_index=True)
     print("Expense added")
-
+    
 def view_expenses():
     if df.empty:
         print("No expense yet")
