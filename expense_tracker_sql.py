@@ -1,6 +1,9 @@
 import sqlite3
 import os
+
+import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib
 from datetime import datetime
 
 conn = sqlite3.connect("expenses.db")
@@ -54,12 +57,22 @@ def search_category():
             print(f"ID:{row[0]}| Category: {row[1]}| Amount: {row[2]}| Date: {row[3]}")
 
 def show_highest_expense():
-    cursor.execute("SELECT * FROM expenses ORDER BY amount DESC LIMIT 1")
-    row = cursor.fetchone()
-    if row:
-        print(f"HIGHEST EXPENSE -> ID: {row[0]}|{row[1]}|{row[2]}|{row[3]}")
+    conn = sqlite3.connect("expenses.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT category, SUM(amount)
+    FROM expenses
+    GROUP BY category
+    ORDER BY SUM(amount) DESC LIMIT 1
+    """)
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        print(f"\nHighest Spending Category: {result[0]}")
+        print(f"Total amount: rs.{result[1]}")
     else:
-        print("NO EXPENSES ADDED YET")
+        print("No expenses found")
 
 def delete_expense():
     view_expenses()
@@ -85,16 +98,34 @@ def update_expense():
         print("Updated.")
 
 def category_summary():
-    cursor.execute("SELECT category, SUM(amount) FROM expenses GROUP BY category")
-    rows = cursor.fetchall()
+        print("Opening chart")
+        show_category_chart()
 
-    if not rows:
-        print("No expenses yet.")
-    else:
-        print("--- Category Summary ---")
-        for category, total in rows:
-            print(f"{category}: {total}")
-        print("-------------------------")
+def get_category_totals():
+    conn = sqlite3.connect("expenses.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT category, SUM(amount)
+    FROM expenses
+    GROUP BY category
+    """)
+    result = cursor.fetchall()
+    conn.close()
+    return result
+
+def show_category_chart():
+    result = get_category_totals()
+    categories = []
+    totals = []
+    for row in result:
+        categories.append(row[0])
+        totals.append(row[1])
+
+    plt.bar(categories, totals)
+    plt.title("Expense by Category")
+    plt.xlabel("Category")
+    plt.ylabel("Total Amount")
+    plt.show()
 
 def export_to_excel():
     cursor.execute("SELECT * FROM expenses")
@@ -113,10 +144,10 @@ while True:
     print("2. View all expense")
     print("3. Show total")
     print("4. Search category")
-    print("5. Show highest expenses")
+    print("5. Show highest spending category")
     print("6. Delete expense")
     print("7. Update expense")
-    print("8. Category summary")
+    print("8. Category summary with Chart")
     print("9. Export to excel")
     print("10. Exit")
     choice = input("Choice 1-10:")
